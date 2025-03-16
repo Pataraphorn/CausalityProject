@@ -55,9 +55,25 @@ class preprocess:
             print(f"This version not having prep_data for {self.data_type} type yet.")
             pass
         print("Done")
-        
+
+    def set_df(self, df):
+        self.df = df
+
     def save_flie(self, save_path: str):
         self.df.to_parquet(save_path,compression='gzip')  
+
+    def topic_to_topic_id(self):
+        print("Getting TopicId process...")
+        topic_df = pd.DataFrame(
+            (
+                [f"{str(x).split('_')[0]}", x]
+                for idx, x in enumerate(self.df["topic"].unique())
+            ),
+            columns=("topic_id", "topic"),
+        )
+        self.df = self.df.join(topic_df.set_index("topic"), on="topic")
+        self.df = self.df.reset_index(drop=True)
+        return self.df
 
 
 def show_details_df(df: str):

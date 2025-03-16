@@ -21,7 +21,7 @@ def create_umap_hdbscan_models():
 def load_model(path_to_load: str, model_embedding_name: str = 'all-MiniLM-L6-v2'):
     model_embedding = SentenceTransformer(model_embedding_name)
     return BERTopic.load(path_to_load, embedding_model=model_embedding)
-    
+
 def run_embedding(df: pd.DataFrame, data_col: str='content', save_path: str=f'{current_dir}/embeddings', model_embedding_name:str='all-MiniLM-L6-v2', batch_size:int=1):
     print('Start Embedding')
     model_embedding = SentenceTransformer(model_embedding_name)
@@ -30,9 +30,10 @@ def run_embedding(df: pd.DataFrame, data_col: str='content', save_path: str=f'{c
                                     batch_size=batch_size)
     np.savez_compressed(save_path, embeddings=embeddings)
     gc.collect()
+    print(f"Save Embedding to {save_path}.npz")
     return save_path+'.npz'
-    
-    
+
+
 def update_model(df:pd.DataFrame, data_col:str ='content', batch_size = 25000, embeddings_load=None):
     if embeddings_load:
         print(f'Loading pretrained embedding from path:{embeddings_load}')
@@ -78,16 +79,17 @@ def save_model(topic_model:BERTopic, path_to_save:str, embedding_model:str):
 
 
 def get_coor_topic(topic_model):
-    if topic_model.mode == 'BERTopic':
-        print('Stating get coordinates of each topic')
-        all_topics = sorted(list(topic_model.model.get_topics().keys()))
-        freq_df = topic_model.model.get_topic_freq()
-        freq_df = freq_df.loc[freq_df.Topic != -1, :]
-        topics = sorted(freq_df.Topic.to_list())
-        indices = np.array([all_topics.index(topic) for topic in topics])
-        embeddings = topic_model.model.c_tf_idf_.toarray()[indices]
-        print('Warning: This may take a lot of time.')
-        embeddings = MinMaxScaler().fit_transform(embeddings)
-        embeddings = UMAP(n_neighbors=2, n_components=2, metric='hellinger', random_state=42).fit_transform(embeddings)
-        coor = { k:v for (k,v) in zip(topics, embeddings)}
-        return coor
+    print("Stating get coordinates of each topic")
+    all_topics = sorted(list(topic_model.get_topics().keys()))
+    freq_df = topic_model.get_topic_freq()
+    freq_df = freq_df.loc[freq_df.Topic != -1, :]
+    topics = sorted(freq_df.Topic.to_list())
+    indices = np.array([all_topics.index(topic) for topic in topics])
+    embeddings = topic_model.c_tf_idf_.toarray()[indices]
+    print("Warning: This may take a lot of time.")
+    embeddings = MinMaxScaler().fit_transform(embeddings)
+    embeddings = UMAP(
+        n_neighbors=2, n_components=2, metric="hellinger", random_state=42
+    ).fit_transform(embeddings)
+    coor = {k: v for (k, v) in zip(topics, embeddings)}
+    return coor

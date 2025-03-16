@@ -13,7 +13,7 @@ class topicModel:
             print(f'Start Initialized')
         else:
             print(f'We do not have the {topic_type} mode yet.')
-            
+
     def topic_from_trained_model(self, model_path: str, embedding_model: str ="all-MiniLM-L6-v2"):    
         if self.topic_type == 'BERTopic':
             self.model = bert.load_model(path_to_load=model_path, model_embedding_name=embedding_model)
@@ -21,7 +21,7 @@ class topicModel:
             print('Finish getting dictionary of topics')
         else:
             print(f'We do not have the {self.topic_type} mode yet.')
-            
+
     def training_model(self, df: pd.DataFrame, embedding_path: str=None):
         if self.topic_type == 'BERTopic':
             if embedding_path:
@@ -29,9 +29,10 @@ class topicModel:
             self.model = bert.update_model(df, data_col='content', embeddings_load=embedding_path)
             self.topic_dict = self.get_dict_of_topic()
             # self.topic_pos = BERT.get_coor_topic(self)
+            print(f"Finish training {self.topic_type} model of topics")
         else:
             print(f'We do not have the {self.topic_type} mode yet.')
-    
+
     def save_model(self, model_path: str, embedding_model: str ="all-MiniLM-L6-v2"):
         if self.topic_type == 'BERTopic':
             bert.save_model(self.model, path_to_save=model_path, embedding_model=embedding_model)
@@ -46,7 +47,7 @@ class topicModel:
         else:
             print(f'We do not have the {self.topic_type} mode yet.')
         return df
-    
+
     def get_dict_of_topic(self):
         if self.topic_type == 'BERTopic':
             topics_name_dict = self.model.get_topic_info().set_index('Topic')['Name'].T.to_dict()
@@ -55,7 +56,7 @@ class topicModel:
         else:
             print(f'We do not have the {self.topic_type} mode yet.')
             return None
-            
+
     def get_embeddings(self):
         if self.topic_type == 'BERTopic':
             all_topics = sorted(list(self.model.get_topics().keys()))
@@ -67,7 +68,7 @@ class topicModel:
         else:
             print(f'We do not have the {self.topic_type} mode yet.')
             return None
-        
+
     def get_corr_topic(self):
         if self.topic_type == 'BERTopic':
             corr = bert.get_coor_topic(self.model)
@@ -75,8 +76,3 @@ class topicModel:
         else:
             print(f'We do not have the {self.topic_type} mode yet.')
             return None
-        
-            
-            
-            
-            
