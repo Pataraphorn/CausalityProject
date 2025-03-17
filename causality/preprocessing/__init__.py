@@ -62,24 +62,6 @@ class preprocess:
     def save_flie(self, save_path: str):
         self.df.to_parquet(save_path,compression='gzip')  
 
-    def topic_to_topic_id(self):
-        print("Getting TopicId process...")
-        topic_df = pd.DataFrame(
-            (
-                [f"{str(x).split('_')[0]}", x]
-                for idx, x in enumerate(self.df["topic"].unique())
-            ),
-            columns=("topic_id", "topic"),
-        )
-        topic_df["topic_id"] = pd.to_numeric(topic_df["topic_id"], errors="coerce")
-        topic_df["topic_id"] = topic_df["topic_id"].apply(
-            lambda x: int(x) if pd.notna(x) and x.is_integer() else x
-        )
-        self.df = self.df.join(topic_df.set_index("topic"), on="topic")
-        self.df = self.df.reset_index(drop=True)
-        return self.df
-
-
 def show_details_df(df: str):
     print(f"Number of rows: {df.shape[0]}")
     print(f"Number of columns: {df.shape[1]}")

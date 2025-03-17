@@ -43,7 +43,7 @@ class topicModel:
         if map:
             df['topic'] = df['content'].progress_apply(lambda x: map(x))
         elif self.topic_type == 'BERTopic':
-            df['topic'] = self.topic_dict
+            df["topic"] = self.topic_dict_
         else:
             print(f'We do not have the {self.topic_type} mode yet.')
         return df
