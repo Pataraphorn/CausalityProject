@@ -1,5 +1,5 @@
 from .._utils import *
-from ..model_topic import bert
+from . import bert
 
 class topicModel:
     def __init__(self, topic_type="BERTopic"):

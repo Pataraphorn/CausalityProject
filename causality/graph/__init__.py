@@ -3,8 +3,8 @@ from collections import Counter
 from .pyg import getting_loader, get_graph
 from sklearn.model_selection import train_test_split
 
-
 class graph:
+
     def __init__(
         self,
         df: pd.DataFrame,
@@ -83,7 +83,8 @@ class graph:
                                                                     batch_size=batch_size)
 
     def get_one_graph(self, i, feature:bool=False):
-        return get_graph(seq=self.df['X'][i], len_seq=self.seq_size, feature=feature)
+        # return get_graph(seq=self.df['X'][i], len_seq=self.seq_size, feature=feature)
+        return get_graph(seq=self.df["X"][i])
 
     def train_test_split(self, test_size=0.2):
         train_df, test_df = train_test_split(self.df, test_size=test_size, stratify=self.df.y)

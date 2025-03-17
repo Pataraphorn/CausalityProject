@@ -20,7 +20,8 @@ pred_map = {
     # 'lgbm': lgbm.pred
 }
 
-class CausalityModel:
+
+class causalityModel:
     def __init__(self, model_type="PC"):
         super().__init__()
         self.model_type = model_type
@@ -31,7 +32,7 @@ class CausalityModel:
     def set_graph(self, graph):
         self.graph = graph
         return self.graph
-    
+
     def training(self, data_matrix: str, columns: str):
         if self.model_type == "PC":
             self.graph = self.model.estimate_dag(data_matrix=data_matrix, columns=columns)
@@ -39,7 +40,7 @@ class CausalityModel:
             print(f"This version not having causality modeling named {self.model_type} yet.")
             pass
         return self.graph
-    
+
     def remove_edge(self):
         if self.model_type == "PC":
             graph = self.model.remove_no_edge()
@@ -47,7 +48,7 @@ class CausalityModel:
             print(f"This version not having causality modeling named {self.model_type} yet.")
             pass
         return graph
-    
+
     def show_graph(self, prog: str = "circo" , format: str ="svg"):
         svg = SVG(nx.nx_agraph.to_agraph(self.graph).draw(prog=prog, format=format))  # prog='dot'
         print(display(svg))
@@ -62,21 +63,21 @@ class CausalityModel:
         self.model = fit_map[self.model_type](self.model,
                                               X=X, y=y,
                                               val_X=val_X, val_y=val_y)
-    
+
     def predict(self, X):
         return pred_map[self.model_type](self.model, X=X)
-    
+
     def confusion_matrix_plot(self, X, y):
         pred = self.predict(X)
         ConfusionMatrixDisplay.from_predictions(y_true=y, y_pred=pred, display_labels=self.label)
-     
+
     def eval_report(self, X, y):
         pred = self.predict(X)
         return classification_report(y_true=y, y_pred=pred, digits=3, target_names=self.label)
-    
+
     def confusion_report(self, X, y):
         pred = self.predict(X)
         return confusion_matrix(y_true=y, y_pred=pred, labels=self.label)
-    
+
     def f1_score(self, X, y):
         return f1_score(X, y, average='weighted')   

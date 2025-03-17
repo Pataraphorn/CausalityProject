@@ -71,6 +71,10 @@ class preprocess:
             ),
             columns=("topic_id", "topic"),
         )
+        topic_df["topic_id"] = pd.to_numeric(topic_df["topic_id"], errors="coerce")
+        topic_df["topic_id"] = topic_df["topic_id"].apply(
+            lambda x: int(x) if pd.notna(x) and x.is_integer() else x
+        )
         self.df = self.df.join(topic_df.set_index("topic"), on="topic")
         self.df = self.df.reset_index(drop=True)
         return self.df

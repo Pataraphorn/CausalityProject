@@ -35,23 +35,23 @@ def run_embedding(df: pd.DataFrame, data_col: str='content', save_path: str=f'{c
 
 
 def update_model(df:pd.DataFrame, data_col:str ='content', batch_size = 25000, embeddings_load=None):
-    if embeddings_load:
+    if embeddings_load is not None:
         print(f'Loading pretrained embedding from path:{embeddings_load}')
         embeddings = np.load(embeddings_load)['embeddings']
     else:
         run_embedding(df)
         embeddings = np.load(f'{current_dir}/embeddings')['embeddings']
-    
+
     batch = len(df) // batch_size
-    
+
     print('Start creating a embedding model')
     base_model = BERTopic()
-    
+
     for i in tqdm(range(batch)):
         umap_model, hdbscan_model = create_umap_hdbscan_models()
         start = i*batch_size
         stop = (i+1)*batch_size
-        
+
         print(f'Started from {start} to {stop} amount:{len(df[start:stop])} docs')
         if i == 0:
             base_model = BERTopic(umap_model=umap_model, hdbscan_model=hdbscan_model).fit(df[start:stop][data_col].tolist(), embeddings[start:stop])
@@ -59,7 +59,7 @@ def update_model(df:pd.DataFrame, data_col:str ='content', batch_size = 25000, e
             new_model = BERTopic(umap_model=umap_model, hdbscan_model=hdbscan_model).fit(df[start:stop][data_col].tolist(), embeddings[start:stop])
             base_model = BERTopic.merge_models([base_model, new_model])
             gc.collect()
-    
+
     # Process the remaining data
     rest_start = batch * batch_size
     print(f'started from {rest_start} to {len(df)} amount:{len(df[rest_start:])} docs')
@@ -67,7 +67,7 @@ def update_model(df:pd.DataFrame, data_col:str ='content', batch_size = 25000, e
     new_model = BERTopic(umap_model=umap_model, hdbscan_model=hdbscan_model).fit(df[rest_start:][data_col].tolist(), embeddings[rest_start:])
     base_model = BERTopic.merge_models([base_model, new_model])
     gc.collect()
-    
+
     print('Updating topics with n_gram_range=(1, 2)')
     base_model.update_topics(df[data_col].tolist(), n_gram_range=(1, 2))
     gc.collect()
