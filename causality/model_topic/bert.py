@@ -14,7 +14,7 @@ else :
     from umap import UMAP
 
 def create_umap_hdbscan_models():
-    umap_model = UMAP(n_components=5, n_neighbors=15, min_dist=0.0)
+    umap_model = UMAP(n_components=5, n_neighbors=15, min_dist=0.0, low_memory=True)
     hdbscan_model = HDBSCAN(min_samples=10, gen_min_span_tree=True)
     return umap_model, hdbscan_model
 
