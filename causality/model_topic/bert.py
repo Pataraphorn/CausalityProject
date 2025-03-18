@@ -35,6 +35,7 @@ def run_embedding(df: pd.DataFrame, data_col: str='content', save_path: str=f'{c
 
 
 def update_model(df:pd.DataFrame, data_col:str ='content', batch_size = 25000, embeddings_load=None):
+    print(f"check embeddings path:{embeddings_load}")
     if embeddings_load is not None:
         print(f'Loading pretrained embedding from path:{embeddings_load}')
         embeddings = np.load(embeddings_load)['embeddings']

@@ -22,10 +22,12 @@ class topicModel:
         else:
             print(f'We do not have the {self.topic_type} mode yet.')
 
-    def training_model(self, df: pd.DataFrame, embedding_path: str=None):
+    def training_model(
+        self, df: pd.DataFrame, embedding_path: str = None, batch_size: int = 512
+    ):
         if self.topic_type == 'BERTopic':
-            if embedding_path:
-                embedding_path = bert.run_embedding(df, batch_size=512)
+            if embedding_path is None:
+                embedding_path = bert.run_embedding(df, batch_size=batch_size)
             self.model = bert.update_model(df, data_col='content', embeddings_load=embedding_path)
             self.topic_dict = self.get_dict_of_topic()
             # self.topic_pos = BERT.get_coor_topic(self)
@@ -43,7 +45,7 @@ class topicModel:
         if map:
             df['topic'] = df['content'].progress_apply(lambda x: map(x))
         elif self.topic_type == 'BERTopic':
-            df["topic"] = self.topic_dict_
+            df["topic"] = self.model.topics_
         else:
             print(f'We do not have the {self.topic_type} mode yet.')
         return df

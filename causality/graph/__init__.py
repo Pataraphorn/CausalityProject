@@ -9,7 +9,7 @@ class graph:
         self,
         df: pd.DataFrame,
         group_name: str = "session_id",
-        X_col: str = "topic_id",
+        X_col: str = "topic",
         y_col: str = "label",
         mode: str = "seq",
         padding: bool = True,
@@ -20,7 +20,7 @@ class graph:
         self.df = df
         self.graph_list = []
         self.mode = mode
-        self.n_topics = len(df["topic_id"].unique())
+        self.n_topics = len(df["topic"].unique())
         self.seq_size = None
 
         print(f'Topics size in this dataframe is : {self.n_topics}')
@@ -36,7 +36,7 @@ class graph:
                 self.df['X'] = self.df['X'].progress_apply(pad_truncate, max_len=seq_size)
                 self.seq_size = seq_size
                 self.n_topics = (
-                    len(df["topic_id"].unique()) + 1
+                    len(df["topic"].unique()) + 1
                 )  # Adding Pad (-2) to the topic input
                 print(f'Updating Topic size of this dataframe to {self.n_topics}.')
                 print(f'Updating sequence size of this dataframe to {self.seq_size}.')                
@@ -97,7 +97,7 @@ class graph:
 def group_to_classify(
     df: pd.DataFrame,
     group_name: str = "session_id",
-    X_col: str = "topic_id",
+    X_col: str = "topic",
     y_col: str = "label",
 ):
     X = []
