@@ -46,10 +46,10 @@ def update_model(df:pd.DataFrame, data_col:str ='content', batch_size = 25000, e
     batch = len(df) // batch_size
 
     print('Start creating a embedding model')
+    umap_model, hdbscan_model = create_umap_hdbscan_models()
     bert = BERTopic(umap_model=umap_model, hdbscan_model=hdbscan_model)
 
     for i in tqdm(range(batch)):
-        umap_model, hdbscan_model = create_umap_hdbscan_models()
         start = i*batch_size
         stop = min((i + 1) * batch_size, len(df))
 
