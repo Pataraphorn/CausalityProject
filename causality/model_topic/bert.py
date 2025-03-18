@@ -6,7 +6,17 @@ from bertopic import BERTopic
 from sklearn.preprocessing import MinMaxScaler
 import gc
 
+device = (
+    "cuda"
+    if torch.cuda.is_available()
+    else "mps" if torch.backends.mps.is_available() else "cpu"
+)
+
 if torch.cuda.is_available():
+    print(
+        f"CUDA is available. Current GPU memory allocated: {torch.cuda.memory_allocated()} bytes"
+    )
+    print(f"Maximum GPU memory allocatable: {torch.cuda.max_memory_allocated()} bytes")
     from cuml.cluster import HDBSCAN
     from cuml.manifold import UMAP
 else :
@@ -24,7 +34,7 @@ def load_model(path_to_load: str, model_embedding_name: str = 'all-MiniLM-L6-v2'
 
 def run_embedding(df: pd.DataFrame, data_col: str='content', save_path: str=f'{current_dir}/embeddings', model_embedding_name:str='all-MiniLM-L6-v2', batch_size:int=1):
     print('Start Embedding')
-    model_embedding = SentenceTransformer(model_embedding_name)
+    model_embedding = SentenceTransformer(model_embedding_name, device=device)
     embeddings = model_embedding.encode(df[data_col].to_list(),
                                     show_progress_bar=True,
                                     batch_size=batch_size)
@@ -51,7 +61,7 @@ def update_model(df:pd.DataFrame, data_col:str ='content', batch_size = 25000, e
 
     for i in tqdm(range(batch)):
         start = i*batch_size
-        stop = min((i + 1) * batch_size, len(df))
+        stop = (i + 1) * batch_size
 
         print(f'Started from {start} to {stop} amount:{len(df[start:stop])} docs')
         if i == 0:
@@ -64,6 +74,13 @@ def update_model(df:pd.DataFrame, data_col:str ='content', batch_size = 25000, e
             )
             base_model = BERTopic.merge_models([base_model, new_model])
             gc.collect()
+
+    # Process the remaining data
+    rest_start = batch * batch_size
+    print(f"started from {rest_start} to {len(df)} amount:{len(df[rest_start:])} docs")
+    new_model = bert.fit(df[rest_start:][data_col].tolist(), embeddings[rest_start:])
+    base_model = BERTopic.merge_models([base_model, new_model])
+    gc.collect()
 
     print('Updating topics with n_gram_range=(1, 2)')
     base_model.update_topics(df[data_col].tolist(), n_gram_range=(1, 2))
