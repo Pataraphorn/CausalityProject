@@ -60,6 +60,7 @@ class topicModel:
         if self.topic_type == 'BERTopic':
             topics_name_dict = self.model.get_topic_info().set_index('Topic')['Name'].T.to_dict()
             topics_name_dict[-2] = '<PAD>'
+            print(f"Number of topics : {len(topics_name_dict)}")
             return topics_name_dict
         else:
             print(f'We do not have the {self.topic_type} mode yet.')

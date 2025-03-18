@@ -40,8 +40,8 @@ def run_embedding(df: pd.DataFrame, data_col: str='content', save_path: str=f'{c
                                     batch_size=batch_size)
     np.savez_compressed(save_path, embeddings=embeddings)
     gc.collect()
-    print(f"Save Embedding to {save_path}.npz")
-    return save_path+'.npz'
+    print(f"Save Embedding to {save_path}_{batch_size}.npz")
+    return f"{save_path}_{batch_size}.npz"
 
 
 def update_model(df:pd.DataFrame, data_col:str ='content', batch_size = 25000, embeddings_load=None):
