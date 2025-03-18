@@ -23,7 +23,7 @@ class topicModel:
             print(f'We do not have the {self.topic_type} mode yet.')
 
     def training_model(
-        self, df: pd.DataFrame, embedding_path: str = None, batch_size: int = 512
+        self, df: pd.DataFrame, embedding_path: str = None, batch_size: int = 500
     ):
         if self.topic_type == 'BERTopic':
             if embedding_path is None:
