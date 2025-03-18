@@ -38,7 +38,7 @@ def run_embedding(df: pd.DataFrame, data_col: str='content', save_path: str=f'{c
     embeddings = model_embedding.encode(df[data_col].to_list(),
                                     show_progress_bar=True,
                                     batch_size=batch_size)
-    np.savez_compressed(save_path, embeddings=embeddings)
+    np.savez_compressed(f"{save_path}_{batch_size}", embeddings=embeddings)
     gc.collect()
     print(f"Save Embedding to {save_path}_{batch_size}.npz")
     return f"{save_path}_{batch_size}.npz"
@@ -89,6 +89,7 @@ def update_model(df:pd.DataFrame, data_col:str ='content', batch_size = 25000, e
 
 def save_model(topic_model:BERTopic, path_to_save:str, embedding_model:str):
     print(f'Saving BERT model with {embedding_model} embedding model')
+    os.makedirs(path_to_save, exist_ok=True)
     topic_model.save(path_to_save, serialization="safetensors", save_ctfidf=True, save_embedding_model=embedding_model)
 
 
