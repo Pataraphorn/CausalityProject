@@ -163,3 +163,7 @@ venv.bak/
 dataset/
 
 # models dir
+causality/model_topic/model/BERTopic-BGL-all-MiniLM-L6-v2/
+causality/model_topic/model/BERTopic-ALICE-Info-all-MiniLM-L6-v2/
+causality/model_topic/model/BERTopic-HDFS-all-MiniLM-L6-v2/
+causality/model_topic/model/BERTopic-HDFS-all-MiniLM-L6-v2.zip
