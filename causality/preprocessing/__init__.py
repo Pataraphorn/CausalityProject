@@ -30,16 +30,7 @@ class preprocess:
         return self.csv_path
 
     def load_data_from_path(self, path: str, type: str = None):
-        print(f"Load data from type:{type} in path:{path} to Dataframe")
-        if type == "parquet":
-            self.df = pd.read_parquet(path)
-        elif type == "npz":
-            npz = np.load(path, allow_pickle=True)
-            self.df = pd.DataFrame({file: npz[file] for file in npz.files})
-        elif type == "pickle":
-            self.df = pd.read_pickle(path)
-        else:
-            self.df = pd.read_csv(path)
+        self.df = load_df_from_path(path, type)
         return self.df
 
     def prep_data(self, label_path: str = None, eor_path: str = None, save_path: str = None):

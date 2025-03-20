@@ -1,31 +1,38 @@
 from .._utils import *
-from ..model_causality import pc_algorithm, fci_algorithm, gnn
+from . import gcn, pc_algorithm, fci_algorithm
 import networkx as nx
 from IPython.display import SVG, display
 from sklearn.metrics import ConfusionMatrixDisplay, confusion_matrix, classification_report, f1_score
 
 model_mapper = {
-    'PC': pc_algorithm.PC(),
-    'FCI': fci_algorithm.FCI(),
-    # 'GNN': gnn.Model(n_feature = 25)
+    "PC": pc_algorithm.PC(),
+    "FCI": fci_algorithm.FCI(),
+    "GCN": gcn.clf,
+    # 'LGBM': lgbm.clf,
 }
 
 fit_map = {
-    # 'GNN': gnn.Model().run
-    # 'lgbm': lgbm.fit
+    "GCN": gcn.fit,
+    # 'LGBM': lgbm.fit
 }
 
 pred_map = {
-    # 'GNN': gnn.Model().predict
-    # 'lgbm': lgbm.pred
+    "GCN": gcn.predict,
+    # 'LGBM': lgbm.pred
 }
 
+label_map = {"GCN": None}
+
+explainer_map = {"GCN": gcn.get_explainer}
+
+explain_map = {"GCN": gcn.explain}
 
 class causalityModel:
     def __init__(self, model_type="PC"):
         super().__init__()
         self.model_type = model_type
         self.model = model_mapper[model_type]
+        self.label = label_map[model_type]
         self.graph = None
         print("Processing with causality modeling name: ", self.model_type)
 
@@ -49,8 +56,11 @@ class causalityModel:
             pass
         return graph
 
-    def show_graph(self, prog: str = "circo" , format: str ="svg"):
-        svg = SVG(nx.nx_agraph.to_agraph(self.graph).draw(prog=prog, format=format))  # prog='dot'
+    def show_graph(self, prog: str = "circo", format: str = "svg", graph=None):
+        graph_temp = self.graph if graph is None else graph
+        svg = SVG(
+            nx.nx_agraph.to_agraph(graph_temp).draw(prog=prog, format=format)
+        )  # prog='dot'
         print(display(svg))
         return svg
 
@@ -59,25 +69,45 @@ class causalityModel:
         print("After remove nodes that do not have edges")
         print("Number of Edges :", self.graph_remove_empty_edges.number_of_edges())
 
-    def fit(self, X, y, val_X=None, val_y=None):
-        self.model = fit_map[self.model_type](self.model,
-                                              X=X, y=y,
-                                              val_X=val_X, val_y=val_y)
+    def show_model(self):
+        self.model.show_model()
 
-    def predict(self, X):
-        return pred_map[self.model_type](self.model, X=X)
+    def set_model(self, model):
+        self.model = model
+        return self.model
 
-    def confusion_matrix_plot(self, X, y):
-        pred = self.predict(X)
+    def fit(self, train_loader, test_loader, n_epoch: int = 100):
+        self.model = fit_map[self.model_type](train_loader, test_loader, n_epoch)
+
+    def predict(self, data_loader):
+        return pred_map[self.model_type](data_loader)
+
+    def set_label(self, label):
+        self.label = label
+        return self.label
+
+    def confusion_matrix_plot(self, y, pred):
         ConfusionMatrixDisplay.from_predictions(y_true=y, y_pred=pred, display_labels=self.label)
 
-    def eval_report(self, X, y):
-        pred = self.predict(X)
-        return classification_report(y_true=y, y_pred=pred, digits=3, target_names=self.label)
+    def eval_report(self, y, pred):
+        print(
+            classification_report(
+                y_true=y, y_pred=pred, digits=3, target_names=self.label
+            )
+        )
 
-    def confusion_report(self, X, y):
-        pred = self.predict(X)
-        return confusion_matrix(y_true=y, y_pred=pred, labels=self.label)
+    def confusion_report(self, y, pred):
+        return confusion_matrix(
+            y_true=y,
+            y_pred=pred,
+            labels=np.arange(len(self.label)) if self.label is not None else None,
+        )
 
     def f1_score(self, X, y):
-        return f1_score(X, y, average='weighted')   
+        return f1_score(X, y, average="weighted")
+
+    def get_explainer(self):
+        return explainer_map[self.model_type]
+
+    def explain(self, data_loader, node_index):
+        return explain_map[self.model_type](data_loader, node_index)

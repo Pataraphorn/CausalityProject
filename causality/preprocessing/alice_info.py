@@ -30,7 +30,7 @@ def get_run_id(df: pd.DataFrame, run_df: pd.DataFrame):
             df.loc[(df['date'] >= start_date) & (df['date'] <= end_date),'RunID'] = run_df['id'].iloc[idx]
             df.loc[(df['date'] >= start_date) & (df['date'] <= end_date),'RunQuality'] = run_df['run_quality'].iloc[idx]
     return df[df['RunID'] != 0]
-    
+
 def get_eor(df: pd.DataFrame, eor_df: pd.DataFrame):
     df['EOR'] = None
     eor_id = eor_df['run_id']
@@ -50,51 +50,52 @@ def normalize(text):
         return text
     else :
         return text
-        
+
 def get_df(df: pd.DataFrame, label_path: str, eor_path: str, save_path: str = None):
     run_df = pd.read_csv(label_path)
     eor_df = pd.read_csv(eor_path)
-    
+
     print("Getting DateTime process...")
     df['date'] = pd.to_datetime(df['Timestamp'], unit='s')
-    
+
     print('Mapping RunID from label file')
     df = get_run_id(df, run_df)
-    
+
     print('Mapping EOR from EOR file')
     df = get_eor(df, eor_df)
-    
+
     print('Removing all severity D')
     df = df[df['Severity'] != 'D']
-    
+
     print('Normalization EOR')
     df['EOR'] = df['EOR'].progress_apply(normalize)
     df = df.dropna(subset='EOR')
-    
+
     print('Getting Crashed from EOR')
     df['crash'] = ['crashed' if eor in crashed else 'not crashed' for eor in df['EOR'].to_list()]
-    
+
     print("Getting EventId process...")
     template_df = pd.DataFrame(([f"E{idx}", x] for idx, x in enumerate(df["Template"].unique())), columns=('EventId', 'EventTemplate'))
     template_df.to_csv(save_path + '/log_templates.csv')  
-    
+
     df = df.merge(template_df, left_on='Template', right_on='EventTemplate', how='left')
 
     df = df.reset_index(drop=True)
     print(df.head())
-    
+
     print("Returning dataframe")
     return pd.DataFrame(
         {
-            'session_id':df['RunID'],
-            'severity':df['Severity'],
-            'content':df['Content'],
-            'event_id':df['PID'],
-            'event_id': df['EventId'],
-            'event_template':df['Template'],
-            'label':df['crash'],
-            'EOR':df['EOR'],
-            'EOR_id':df['EORTypeID'],
-            'run_quality':df['RunQuality']
+            "date_time": df["date"],
+            "session_id": df["RunID"],
+            "severity": df["Severity"],
+            "content": df["Content"],
+            "event_id": df["PID"],
+            "event_id": df["EventId"],
+            "event_template": df["Template"],
+            "label": df["crash"],
+            "EOR": df["EOR"],
+            "EOR_id": df["EORTypeID"],
+            "run_quality": df["RunQuality"],
         }
     )
