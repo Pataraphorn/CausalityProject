@@ -46,10 +46,10 @@ class preprocess:
             print(f"This version not having prep_data for {self.data_type} type yet.")
             pass
         print("Done")
-
+        
     def set_df(self, df):
         self.df = df
-
+        
     def save_flie(self, save_path: str):
         self.df.to_parquet(save_path,compression='gzip')  
 

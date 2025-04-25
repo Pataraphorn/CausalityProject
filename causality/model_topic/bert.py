@@ -13,10 +13,6 @@ device = (
 )
 
 if torch.cuda.is_available():
-    print(
-        f"CUDA is available. Current GPU memory allocated: {torch.cuda.memory_allocated()} bytes"
-    )
-    print(f"Maximum GPU memory allocatable: {torch.cuda.max_memory_allocated()} bytes")
     from cuml.cluster import HDBSCAN
     from cuml.manifold import UMAP
 else :
@@ -26,8 +22,18 @@ else :
 def create_umap_hdbscan_models():
     umap_model = UMAP(n_components=5, n_neighbors=15, min_dist=0.0, low_memory=True)
     hdbscan_model = HDBSCAN(min_samples=10, gen_min_span_tree=True)
+    # umap_model = UMAP(n_components=5,
+    #                 n_neighbors=5,        # smaller = more local variety
+    #                 min_dist=0.5,         # more space between clusters → better diversity
+    #                 metric='cosine',
+    #                 low_memory=True)
+    # hdbscan_model = HDBSCAN(min_cluster_size=30,  # larger cluster size = fewer clusters
+    #                 min_samples=5,
+    #                 gen_min_span_tree=True,
+    #                 prediction_data=True,  # enables soft clustering
+    #                 metric='euclidean')
     return umap_model, hdbscan_model
-
+        
 def load_model(path_to_load: str, model_embedding_name: str = 'all-MiniLM-L6-v2'):
     model_embedding = SentenceTransformer(model_embedding_name)
     return BERTopic.load(path_to_load, embedding_model=model_embedding)
@@ -38,13 +44,14 @@ def run_embedding(df: pd.DataFrame, data_col: str='content', save_path: str=f'{c
     embeddings = model_embedding.encode(df[data_col].to_list(),
                                     show_progress_bar=True,
                                     batch_size=batch_size)
-    np.savez_compressed(f"{save_path}_{batch_size}", embeddings=embeddings)
+    np.savez_compressed(f"{save_path}_{batch_size}_{data_col}", embeddings=embeddings)
     gc.collect()
-    print(f"Save Embedding to {save_path}_{batch_size}.npz")
-    return f"{save_path}_{batch_size}.npz"
+    print(f"Save Embedding to {save_path}_{batch_size}_{data_col}.npz")
+    return f"{save_path}_{batch_size}_{data_col}.npz"
 
 
 def update_model(df:pd.DataFrame, data_col:str ='content', batch_size = 25000, embeddings_load=None):
+    # BGL batch_size = 224
     print(f"check embeddings path:{embeddings_load}")
     if embeddings_load is not None:
         print(f'Loading pretrained embedding from path:{embeddings_load}')
@@ -58,6 +65,10 @@ def update_model(df:pd.DataFrame, data_col:str ='content', batch_size = 25000, e
     print('Start creating a embedding model')
     umap_model, hdbscan_model = create_umap_hdbscan_models()
     bert = BERTopic(umap_model=umap_model, hdbscan_model=hdbscan_model)
+    # bert = BERTopic(umap_model=umap_model, 
+    #               hdbscan_model=hdbscan_model, 
+    #               top_n_words=10,  # fewer keywords per topic = clearer distinctions
+    #               calculate_probabilities=True)
 
     for i in tqdm(range(batch)):
         start = i*batch_size
@@ -81,7 +92,12 @@ def update_model(df:pd.DataFrame, data_col:str ='content', batch_size = 25000, e
     new_model = bert.fit(df[rest_start:][data_col].tolist(), embeddings[rest_start:])
     base_model = BERTopic.merge_models([base_model, new_model])
     gc.collect()
-
+    
+    # # Merge semantically similar topics while maintaining diversity
+    # print('Reduce similar topics while maintaining diversity')
+    # base_model.reduce_topics(df[data_col].tolist(), nr_topics=10)
+    # gc.collect()
+    
     print('Updating topics with n_gram_range=(1, 2)')
     base_model.update_topics(df[data_col].tolist(), n_gram_range=(1, 2))
     gc.collect()
@@ -91,7 +107,6 @@ def save_model(topic_model:BERTopic, path_to_save:str, embedding_model:str):
     print(f'Saving BERT model with {embedding_model} embedding model')
     os.makedirs(path_to_save, exist_ok=True)
     topic_model.save(path_to_save, serialization="safetensors", save_ctfidf=True, save_embedding_model=embedding_model)
-
 
 def get_coor_topic(topic_model):
     print("Stating get coordinates of each topic")

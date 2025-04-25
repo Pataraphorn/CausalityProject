@@ -11,7 +11,7 @@ class topicModel:
         self.data_col = "content"
         print("Processing with topic modeling name:", self.topic_type)
         if self.topic_type == 'BERTopic':
-            print(f'Start Initialized')
+            print(f'Start Initialized BERTopic')
         else:
             print(f'We do not have the {topic_type} mode yet.')
 
@@ -27,11 +27,11 @@ class topicModel:
             print(f'We do not have the {self.topic_type} mode yet.')
 
     def training_model(
-        self, df: pd.DataFrame, embedding_path: str = None, batch_size: int = 500
+        self, df: pd.DataFrame, embedding_path: str = None, batch_size: int = 500, model_embedding_name: str ='all-MiniLM-L6-v2'
     ):
         if self.topic_type == 'BERTopic':
             if embedding_path is None:
-                embedding_path = bert.run_embedding(df, batch_size=batch_size)
+                embedding_path = bert.run_embedding(df, data_col=self.data_col, batch_size=batch_size, model_embedding_name=model_embedding_name)
             self.model = bert.update_model(
                 df, data_col=self.data_col, embeddings_load=embedding_path
             )
@@ -59,7 +59,7 @@ class topicModel:
     def get_dict_of_topic(self):
         if self.topic_type == 'BERTopic':
             topics_name_dict = self.model.get_topic_info().set_index('Topic')['Name'].T.to_dict()
-            topics_name_dict[-2] = '<PAD>'
+            # topics_name_dict[-2] = '<PAD>'
             print(f"Number of topics : {len(topics_name_dict)}")
             return topics_name_dict
         else:

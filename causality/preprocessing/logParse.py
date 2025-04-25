@@ -39,7 +39,7 @@ def get_BlockId(ParameterList):
     return None
 
 def get_datetime_from_timestamp(timestamp):
-    df_datetime = timestamp.progress_apply(lambda x: datetime.datetime.fromtimestamp(x).strftime("%Y-%m-%d %H:%M:%S"))
+    df_datetime = timestamp.progress_apply(lambda x: datetime.datetime.strptime(x, "%Y-%m-%d-%H.%M.%S.%f"))
     df_datetime = df_datetime.progress_apply(lambda x: pd.to_datetime(str(x)))
     return df_datetime
     
@@ -96,8 +96,12 @@ def get_bgl_df(path: str):
     bgl_df = pd.read_csv(path)
     
     print("Getting DateTime process...")
-    bgl_df["DateTime"] = get_Datetime(bgl_df["Date"], bgl_df["Timestamp"])
+    bgl_df["DateTime"] = get_datetime_from_timestamp(bgl_df["Time"])
     
+    print('Label Normal/Abnormal')
+    bgl_df["label"] = bgl_df["Label"].apply(lambda x: 'Normal' if x == "-" else x)
+    bgl_df["label_anomaly"] = bgl_df["Label"].apply(lambda x: 'Normal' if x == "-" else 'Abnormal')
+
     bgl_df = bgl_df.reset_index(drop=True)
 
     print("Returning dataframe")
@@ -109,6 +113,7 @@ def get_bgl_df(path: str):
             "content": bgl_df["Content"],
             "event_id": bgl_df["EventId"],
             "event_template": bgl_df["EventTemplate"],
-            "label": bgl_df["Label"],
+            "label_group": bgl_df["label"],
+            "label": bgl_df["label_anomaly"],
         }   
     )
