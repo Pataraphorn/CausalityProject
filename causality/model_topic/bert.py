@@ -20,18 +20,10 @@ else :
     from umap import UMAP
 
 def create_umap_hdbscan_models():
-    umap_model = UMAP(n_components=5, n_neighbors=15, min_dist=0.0, low_memory=True)
-    hdbscan_model = HDBSCAN(min_samples=10, gen_min_span_tree=True)
-    # umap_model = UMAP(n_components=5,
-    #                 n_neighbors=5,        # smaller = more local variety
-    #                 min_dist=0.5,         # more space between clusters → better diversity
-    #                 metric='cosine',
-    #                 low_memory=True)
-    # hdbscan_model = HDBSCAN(min_cluster_size=30,  # larger cluster size = fewer clusters
-    #                 min_samples=5,
-    #                 gen_min_span_tree=True,
-    #                 prediction_data=True,  # enables soft clustering
-    #                 metric='euclidean')
+    # umap_model = UMAP(n_components=5, n_neighbors=15, min_dist=0.0, low_memory=True)
+    # hdbscan_model = HDBSCAN(min_samples=10, gen_min_span_tree=True)
+    umap_model = UMAP(n_components=10, n_neighbors=10, min_dist=0.1, low_memory=True)
+    hdbscan_model = HDBSCAN(min_samples=20, gen_min_span_tree=True)
     return umap_model, hdbscan_model
         
 def load_model(path_to_load: str, model_embedding_name: str = 'all-MiniLM-L6-v2'):
@@ -65,10 +57,6 @@ def update_model(df:pd.DataFrame, data_col:str ='content', batch_size = 25000, e
     print('Start creating a embedding model')
     umap_model, hdbscan_model = create_umap_hdbscan_models()
     bert = BERTopic(umap_model=umap_model, hdbscan_model=hdbscan_model)
-    # bert = BERTopic(umap_model=umap_model, 
-    #               hdbscan_model=hdbscan_model, 
-    #               top_n_words=10,  # fewer keywords per topic = clearer distinctions
-    #               calculate_probabilities=True)
 
     for i in tqdm(range(batch)):
         start = i*batch_size
@@ -92,12 +80,7 @@ def update_model(df:pd.DataFrame, data_col:str ='content', batch_size = 25000, e
     new_model = bert.fit(df[rest_start:][data_col].tolist(), embeddings[rest_start:])
     base_model = BERTopic.merge_models([base_model, new_model])
     gc.collect()
-    
-    # # Merge semantically similar topics while maintaining diversity
-    # print('Reduce similar topics while maintaining diversity')
-    # base_model.reduce_topics(df[data_col].tolist(), nr_topics=10)
-    # gc.collect()
-    
+
     print('Updating topics with n_gram_range=(1, 2)')
     base_model.update_topics(df[data_col].tolist(), n_gram_range=(1, 2))
     gc.collect()

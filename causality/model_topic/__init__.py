@@ -1,5 +1,7 @@
 from .._utils import *
-from . import bert
+from . import bert, top2vec
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 
 class topicModel:
     def __init__(self, topic_type="BERTopic"):
@@ -12,6 +14,8 @@ class topicModel:
         print("Processing with topic modeling name:", self.topic_type)
         if self.topic_type == 'BERTopic':
             print(f'Start Initialized BERTopic')
+        elif self.topic_type == 'Top2Vec':
+            print(f'Start Initialized Top2Vec')
         else:
             print(f'We do not have the {topic_type} mode yet.')
 
@@ -21,6 +25,10 @@ class topicModel:
     def topic_from_trained_model(self, model_path: str, embedding_model: str ="all-MiniLM-L6-v2"):    
         if self.topic_type == 'BERTopic':
             self.model = bert.load_model(path_to_load=model_path, model_embedding_name=embedding_model)
+            self.topic_dict = self.get_dict_of_topic()
+            print('Finish getting dictionary of topics')
+        elif self.topic_type == 'Top2Vec':
+            self.model = top2vec.load_model(path_to_load=model_path)
             self.topic_dict = self.get_dict_of_topic()
             print('Finish getting dictionary of topics')
         else:
@@ -85,3 +93,46 @@ class topicModel:
         else:
             print(f'We do not have the {self.topic_type} mode yet.')
             return None
+
+    def topic_diversity(self, top_n=20):
+        # Get topic words
+        topics = self.model.get_topics()
+        top_n = 10
+
+        # Extract words from topics
+        topic_words = [[word for word, _ in topics[topic]] for topic in topics if topic != -1]
+
+        # Flatten and check uniqueness
+        unique_words = set(word for topic in topic_words for word in topic[:top_n])
+        diversity = len(unique_words) / (len(topic_words) * top_n)
+        return diversity
+
+    def topic_coherence(self, top_n=10, window_size=20):
+        topic_words = self.model.get_topics()
+        topic_words = [ [w for w, _ in topic_words[k]] for k in topic_words if k != -1 ]
+        
+        docs = self.df[self.data_col].tolist()
+
+        vectorizer = CountVectorizer(stop_words='english')
+        X = vectorizer.fit_transform(docs)
+        terms = vectorizer.get_feature_names_out()
+        
+        term_index = {term: idx for idx, term in enumerate(terms)}
+        topic_coherences = []
+
+        for topic in topic_words:
+            topic = [w for w in topic if w in term_index]
+            if len(topic) < 2:
+                topic_coherences.append(0)
+                continue
+
+            indices = [term_index[w] for w in topic]
+            submatrix = X[:, indices].toarray()
+            co_matrix = cosine_similarity(submatrix.T)
+            
+            # Take the upper triangle without the diagonal
+            upper = np.triu_indices_from(co_matrix, k=1)
+            coherence = co_matrix[upper].mean()
+            topic_coherences.append(coherence)
+
+        return np.mean(topic_coherences)
