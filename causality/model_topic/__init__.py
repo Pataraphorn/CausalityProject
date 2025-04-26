@@ -1,5 +1,5 @@
 from .._utils import *
-from . import bert, top2vec
+from . import bert
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -14,8 +14,6 @@ class topicModel:
         print("Processing with topic modeling name:", self.topic_type)
         if self.topic_type == 'BERTopic':
             print(f'Start Initialized BERTopic')
-        elif self.topic_type == 'Top2Vec':
-            print(f'Start Initialized Top2Vec')
         else:
             print(f'We do not have the {topic_type} mode yet.')
 
@@ -25,10 +23,6 @@ class topicModel:
     def topic_from_trained_model(self, model_path: str, embedding_model: str ="all-MiniLM-L6-v2"):    
         if self.topic_type == 'BERTopic':
             self.model = bert.load_model(path_to_load=model_path, model_embedding_name=embedding_model)
-            self.topic_dict = self.get_dict_of_topic()
-            print('Finish getting dictionary of topics')
-        elif self.topic_type == 'Top2Vec':
-            self.model = top2vec.load_model(path_to_load=model_path)
             self.topic_dict = self.get_dict_of_topic()
             print('Finish getting dictionary of topics')
         else:
